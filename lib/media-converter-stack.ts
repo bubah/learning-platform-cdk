@@ -1,33 +1,58 @@
 import * as cdk from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as AWS from 'aws-sdk';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
 
 export class MediaConverterStack extends cdk.Stack {
-  public readonly mediaConverterLambda: lambda.Function;
-
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Import S3 buckets (from another stack or create here)
-    const s3AName = cdk.Fn.importValue('S3BucketAName');
-    const s3BName = cdk.Fn.importValue('S3BucketBName');
-
-    // Media Converter Lambda function
-    this.mediaConverterLambda = new lambda.Function(this, 'MediaConverterLambda', {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: 'mediaConverter.handler',
-      code: lambda.Code.fromAsset('lambda'), // Path to Lambda function code
-      environment: {
-        S3_A_BUCKET: s3AName,
-        S3_B_BUCKET: s3BName,
-      },
+    // Create S3 buckets for input and output
+    const s3A = new s3.Bucket(this, 'S3BucketA', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,  // Change based on your need
+    });
+    const s3B = new s3.Bucket(this, 'S3BucketB', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,  // Change based on your need
     });
 
-    // Grant Lambda permissions to read from S3(A) and write to S3(B)
-    const s3A = s3.Bucket.fromBucketName(this, 'S3BucketA', s3AName);
-    const s3B = s3.Bucket.fromBucketName(this, 'S3BucketB', s3BName);
-    s3A.grantRead(this.mediaConverterLambda);
-    s3B.grantWrite(this.mediaConverterLambda);
+    // Create MediaConvert role
+    const mediaConvertRole = new iam.Role(this, 'MediaConvertRole', {
+      assumedBy: new iam.ServicePrincipal('mediaconvert.amazonaws.com'),
+    });
+
+    // Use AWS SDK to get MediaConvert endpoint
+    const mediaConvertClient = new AWS.MediaConvert({ region: 'us-west-2' });
+    const mediaConvertEndpoint = mediaConvertClient.endpoint.hostname; // Extract hostname as string
+
+    // Create Lambda function to trigger MediaConvert job
+    const mediaConverterLambda = new lambda.Function(this, 'MediaConverterLambda', {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/mediaConverter'),  // Lambda code directory
+      environment: {
+        MEDIA_CONVERT_ENDPOINT: mediaConvertEndpoint,
+        S3_BUCKET_B: s3B.bucketName,
+      },
+      initialPolicy: [
+        new iam.PolicyStatement({
+          actions: ['mediaconvert:CreateJob'],
+          resources: ['*'],  // For simplicity, using * (narrow to specific resources if needed)
+        }),
+        new iam.PolicyStatement({
+          actions: ['s3:GetObject', 's3:PutObject'],
+          resources: [
+            `${s3A.bucketArn}/*`,  // S3 bucket A permissions
+            `${s3B.bucketArn}/*`,  // S3 bucket B permissions
+          ],
+        }),
+      ],
+    });
+
+    s3A.addEventNotification(s3.EventType.OBJECT_CREATED, new s3n.LambdaDestination(mediaConverterLambda), {
+      suffix: '.mp4',  // Trigger only for MP4 uploads
+    });
   }
 }
