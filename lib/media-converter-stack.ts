@@ -99,8 +99,9 @@ export class MediaConverterStack extends cdk.Stack {
       code: lambda.Code.fromAsset('lambda/mediaConverter'),  // Lambda code directory
       environment: {
         MEDIA_CONVERT_ENDPOINT: mediaConvertEndpoint,
-        S3_BUCKET_UNPROCESSED_MEDIA: unprocessedMediaBucket.bucketName,
-        S3_BUCKET_PROCESSED_MEDIA: processedMediaBucket.bucketName,
+        MEDIA_CONVERTER_ROLE_ARN: mediaConvertRole.roleArn,
+        // S3_BUCKET_UNPROCESSED_MEDIA: unprocessedMediaBucket.bucketName,
+        // S3_BUCKET_PROCESSED_MEDIA: processedMediaBucket.bucketName,
       },
       role: mediaConvertLambdaRole,
     });
