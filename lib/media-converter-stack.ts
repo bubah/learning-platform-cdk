@@ -111,7 +111,7 @@ export class MediaConverterStack extends cdk.Stack {
       functionName: updateVideoStatusLambdaName,
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/ec2PublicIp'),
+      code: lambda.Code.fromAsset('lambda/updateVideoStatus'),  // Lambda code directory
       environment: {
         LEARNING_PLATFORM_BASE_URL: ec2PublicIp
       }

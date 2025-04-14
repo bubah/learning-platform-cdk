@@ -21,22 +21,22 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: `subnet${id}-${props?.environment}-1`,
+          name: `subnet-${id}-${props?.environment}-1`,
           subnetType: ec2.SubnetType.PUBLIC,
         },
         {
           cidrMask: 24,
-          name: `subnet${id}-${props?.environment}-2`,
-          subnetType: ec2.SubnetType.PUBLIC,
+          name: `subnet-${id}-${props?.environment}-2`,
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
       ],
       natGateways: 0, // Use a single NAT Gateway for cost efficiency
     });
 
     // Create a Security Group allowing SSH (port 22) and HTTP (port 80)
-    const ec2SecurityGroup = new ec2.SecurityGroup(this, `sg-${id}-${props?.environment}`, {
+    const ec2SecurityGroup = new ec2.SecurityGroup(this, `ec2-sg-${id}-${props?.environment}`, {
         vpc: this.vpc,
-        allowAllOutbound: true,
+        allowAllOutbound: false,
         description: 'Security Group allowing SSH and HTTP(s) and allows EC2 to RDS communication',
     });
 
@@ -46,9 +46,10 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     ec2SecurityGroup.addEgressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(5432), 'Allow Postgresql access');
 
     // Create an EC2 instance within the VPC
+    const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
     this.ec2Instance = new ec2.Instance(this, `ec2-${id}-${props?.environment}`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
-      keyName: 'learning-platform-aws-acc-2',
+      keyPair,
       machineImage: new ec2.AmazonLinuxImage(),
       securityGroup: ec2SecurityGroup, 
       vpc: this.vpc,
@@ -71,11 +72,11 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     // Allow inbound traffic from your local PC IP address (replace with your actual public IP)
     const myIp = 'YOUR_PUBLIC_IP/32'; // Example: '203.0.113.0/32'
 
-    rdsSecurityGroup.addIngressRule(
-        ec2.Peer.ipv4(myIp), // Allow traffic from your local IP address
-        ec2.Port.tcp(5432), // PostgreSQL default port
-        'Allow local PC access to RDS on PostgreSQL port'
-    );
+    // rdsSecurityGroup.addIngressRule(
+    //     // ec2.Peer.ipv4(myIp), // Allow traffic from your local IP address
+    //     ec2.Port.tcp(5432), // PostgreSQL default port
+    //     'Allow local PC access to RDS on PostgreSQL port'
+    // );
 
   
     // Create the RDS instance and associate the security group
@@ -88,7 +89,7 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
         securityGroups: [rdsSecurityGroup], // Attach the RDS security group here
         storageType: rds.StorageType.GP2,
         vpcSubnets: {
-            subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS, // Ensure RDS is in private subnets
+            subnetType: ec2.SubnetType.PRIVATE_ISOLATED, // Ensure RDS is in private subnets
         },
         removalPolicy: cdk.RemovalPolicy.DESTROY, // Only for development/test environments,
         cloudwatchLogsExports: ['postgresql'],

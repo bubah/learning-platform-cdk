@@ -4,13 +4,12 @@ import { VpcStack } from '../lib/vpc-stack';
 import { MediaConverterStack } from '../lib/media-converter-stack';
 
 const app = new cdk.App();
-// Instantiate the VPC stack
-const vpcStack = new VpcStack(app, 'VpcStack', {
-    environment: 'dev', // Specify the environment name
+const vpcStack = new VpcStack(app, 'vpc-stack', {
+    environment: 'dev'
 });
-
-// Instantiate the Media Converter stack and enforce dependencies
-const mediaConverterStack = new MediaConverterStack(app, 'MediaConverterStack');
+const mediaConverterStack = new MediaConverterStack(app, 'media-converter-stack', {
+    environment: 'dev',
+});
 
 // Ensure the Media Converter stack depends on the VPC and S3Lambda stacks
 mediaConverterStack.node.addDependency(vpcStack);
