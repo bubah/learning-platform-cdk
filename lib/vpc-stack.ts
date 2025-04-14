@@ -6,7 +6,10 @@ import { Construct } from 'constructs';
 
 interface VpcStackProps extends cdk.StackProps {
   environment: string; // Environment name (e.g., dev, prod)
+  accountId?: string; // AWS Account ID
+  whiteListedIps?: string[]; // Optional: List of IPs to whitelist for RDS access
 }
+
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly ec2Instance: ec2.Instance;
@@ -16,17 +19,17 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     super(scope, id, props);
 
     // Create a VPC
-    this.vpc = new ec2.Vpc(this, `vpc-${id}-${props?.environment}`, {
+    this.vpc = new ec2.Vpc(this, `${id}-vpc-${props?.environment}-${props?.accountId}`, {
       maxAzs: 3, // Use two Availability Zones for better resilience
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: `subnet-${id}-${props?.environment}-1`,
+          name: `${id}-subnet-${props?.environment}-${props?.accountId}-1`,
           subnetType: ec2.SubnetType.PUBLIC,
         },
         {
           cidrMask: 24,
-          name: `subnet-${id}-${props?.environment}-2`,
+          name: `${id}-subnet-${props?.environment}-${props?.accountId}-2`,
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
       ],
@@ -34,7 +37,7 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     });
 
     // Create a Security Group allowing SSH (port 22) and HTTP (port 80)
-    const ec2SecurityGroup = new ec2.SecurityGroup(this, `ec2-sg-${id}-${props?.environment}`, {
+    const ec2SecurityGroup = new ec2.SecurityGroup(this, `${id}-sg-ec2-${props?.environment}-${props?.accountId}`, {
         vpc: this.vpc,
         allowAllOutbound: false,
         description: 'Security Group allowing SSH and HTTP(s) and allows EC2 to RDS communication',
@@ -47,16 +50,16 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
 
     // Create an EC2 instance within the VPC
     const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
-    this.ec2Instance = new ec2.Instance(this, `ec2-${id}-${props?.environment}`, {
+    this.ec2Instance = new ec2.Instance(this, `${id}-ec2-${props?.environment}-${props?.accountId}`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       keyPair,
       machineImage: new ec2.AmazonLinuxImage(),
-      securityGroup: ec2SecurityGroup, 
+      securityGroup: ec2SecurityGroup,
       vpc: this.vpc,
     });
 
     // Create a security group for RDS
-    const rdsSecurityGroup = new ec2.SecurityGroup(this, `sg-${id}-${props?.environment}-rds`, {
+    const rdsSecurityGroup = new ec2.SecurityGroup(this, `${id}-sg-rds-${props?.environment}-${props?.accountId}`, {
         vpc: this.vpc,
         allowAllOutbound: true,
         description: 'Security Group allowing communication between EC2 and RDS',
@@ -70,17 +73,20 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     );
 
     // Allow inbound traffic from your local PC IP address (replace with your actual public IP)
-    const myIp = 'YOUR_PUBLIC_IP/32'; // Example: '203.0.113.0/32'
+    const whiteListedIps = props?.whiteListedIps || [];
 
-    // rdsSecurityGroup.addIngressRule(
-    //     // ec2.Peer.ipv4(myIp), // Allow traffic from your local IP address
-    //     ec2.Port.tcp(5432), // PostgreSQL default port
-    //     'Allow local PC access to RDS on PostgreSQL port'
-    // );
+    whiteListedIps.forEach((ip) => {
+        rdsSecurityGroup.addIngressRule(
+            ec2.Peer.ipv4(ip), // Allow traffic from whitelisted IPs
+            ec2.Port.tcp(5432), // PostgreSQL default port
+            `Allow access to RDS on PostgreSQL port from ${ip}`
+        );
+    }
+    );
 
   
     // Create the RDS instance and associate the security group
-    this.rdsInstance = new rds.DatabaseInstance(this, `rds-${id}-${props?.environment}`, {
+    this.rdsInstance = new rds.DatabaseInstance(this, `${id}-rds-${props?.environment}-${props?.accountId}`, {
         engine: rds.DatabaseInstanceEngine.postgres({
             version: rds.PostgresEngineVersion.VER_17_2
         }),

@@ -3,12 +3,16 @@ import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { MediaConverterStack } from '../lib/media-converter-stack';
 
+const ACCOUNT_ID = "805358685077"
 const app = new cdk.App();
-const vpcStack = new VpcStack(app, 'vpc-stack', {
-    environment: 'dev'
-});
-const mediaConverterStack = new MediaConverterStack(app, 'media-converter-stack', {
+const vpcStack = new VpcStack(app, 'lp-vpcstack', {
     environment: 'dev',
+    accountId: ACCOUNT_ID, // Replace with your actual account ID
+    whiteListedIps: ["172.56.35.116/32", "162.83.152.212/32", "100.33.64.132/32"], // Replace with your actual IPs
+});
+const mediaConverterStack = new MediaConverterStack(app, 'lp-mediaconvstack', {
+    environment: 'dev',
+    accountId: ACCOUNT_ID, // Replace with your actual account ID
 });
 
 // Ensure the Media Converter stack depends on the VPC and S3Lambda stacks

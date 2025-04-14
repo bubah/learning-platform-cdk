@@ -8,16 +8,18 @@ import { Construct } from 'constructs';
 
 interface VpcStackProps extends cdk.StackProps {
   environment: string; // Environment name (e.g., dev, prod)
+  accountId?: string; // AWS Account ID
+  whiteListedIps?: string[]; // Optional: List of IPs to whitelist for RDS access
 }
 export class MediaConverterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: VpcStackProps) {
     super(scope, id, props);
-    const uporcessedMediaBucketName = `unprocessed-media-${id}-${props?.environment}`;
-    const processedMediaBucketName = `processed-media-${id}-${props?.environment}`;
-    const mediaConverterRoleName = `media-converter-role-${id}-${props?.environment}`;
-    const lambdaMediaConverterRoleRoleName = `lambda-media-converter-role-${id}-${props?.environment}`;
-    const updateVideoStatusLambdaName = `update-video-status-lambda-${id}-${props?.environment}`;
-    const mediaConverterLambdaName = `media-converter-lambda-${id}-${props?.environment}`;
+    const uporcessedMediaBucketName = `${id}-unprocessed-media-${props?.environment}-${props?.accountId}`;
+    const processedMediaBucketName = `${id}-processed-media-${props?.environment}-${props?.accountId}`;
+    const mediaConverterRoleName = `${id}-role-mdia-conv-${props?.environment}-${props?.accountId}`;
+    const lambdaMediaConverterRoleRoleName = `${id}-role-lmda-mdia-conv-${props?.environment}-${props?.accountId}`;
+    const updateVideoStatusLambdaName = `${id}-lambda-update-status-${props?.environment}-${props?.accountId}`;
+    const mediaConverterLambdaName = `${id}-lambda-mdia-conv-${props?.environment}-${props?.accountId}`;
 
   
     const unprocessedMediaBucket = new s3.Bucket(this, uporcessedMediaBucketName, {
