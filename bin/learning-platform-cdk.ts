@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
-import { S3LambdaStack } from '../lib/s3-lambda-stack';
 import { MediaConverterStack } from '../lib/media-converter-stack';
 
 const app = new cdk.App();
@@ -10,15 +9,11 @@ const vpcStack = new VpcStack(app, 'VpcStack', {
     environment: 'dev', // Specify the environment name
 });
 
-// Instantiate the S3 and Lambda stack
-const s3LambdaStack = new S3LambdaStack(app, 'S3LambdaStack');
-
 // Instantiate the Media Converter stack and enforce dependencies
 const mediaConverterStack = new MediaConverterStack(app, 'MediaConverterStack');
 
 // Ensure the Media Converter stack depends on the VPC and S3Lambda stacks
 mediaConverterStack.node.addDependency(vpcStack);
-mediaConverterStack.node.addDependency(s3LambdaStack);
 
 
 // new LearningPlatformCdkStack(app, 'LearningPlatformCdkStack', {

@@ -113,7 +113,7 @@ export class MediaConverterStack extends cdk.Stack {
       handler: 'index.handler',
       code: lambda.Code.fromAsset('lambda/ec2PublicIp'),
       environment: {
-        LEARNING_PLATFORM_BASE_URL: `http://${ec2PublicIp}/`
+        LEARNING_PLATFORM_BASE_URL: ec2PublicIp
       }
     });
     
