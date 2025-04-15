@@ -56,6 +56,10 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
       machineImage: new ec2.AmazonLinuxImage(),
       securityGroup: ec2SecurityGroup,
       vpc: this.vpc,
+      associatePublicIpAddress: true, // Ensure the instance has a public IP
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC, // Ensure EC2 is in public subnets
+      },
     });
 
     // Create a security group for RDS
@@ -99,7 +103,7 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
         },
         removalPolicy: cdk.RemovalPolicy.DESTROY, // Only for development/test environments,
         cloudwatchLogsExports: ['postgresql'],
-        databaseName: `${id}-${props?.environment}-db`,
+        databaseName: `learningPlatformDb${props?.environment}`,
     });
 
     // Output EC2 public IP (for use by other stacks)
