@@ -39,14 +39,13 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     // Create a Security Group allowing SSH (port 22) and HTTP (port 80)
     const ec2SecurityGroup = new ec2.SecurityGroup(this, `${id}-sg-ec2-${props?.environment}-${props?.accountId}`, {
         vpc: this.vpc,
-        allowAllOutbound: false,
+        allowAllOutbound: true,
         description: 'Security Group allowing SSH and HTTP(s) and allows EC2 to RDS communication',
     });
 
     ec2SecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH access');
     ec2SecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP access');
     ec2SecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS access');
-    ec2SecurityGroup.addEgressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(5432), 'Allow Postgresql access');
 
     // Create an EC2 instance within the VPC
     const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
@@ -61,6 +60,7 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
         subnetType: ec2.SubnetType.PUBLIC, // Ensure EC2 is in public subnets
       },
     });
+
 
     // Create a security group for RDS
     const rdsSecurityGroup = new ec2.SecurityGroup(this, `${id}-sg-rds-${props?.environment}-${props?.accountId}`, {
