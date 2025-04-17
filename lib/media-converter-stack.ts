@@ -5,6 +5,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as AWS from 'aws-sdk';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 
 interface VpcStackProps extends cdk.StackProps {
   environment: string; // Environment name (e.g., dev, prod)
@@ -93,31 +94,31 @@ export class MediaConverterStack extends cdk.Stack {
     );
 
     const ec2PublicIp = cdk.Fn.importValue('EC2PublicIP');
-    // Create Lambda function to trigger MediaConvert job
-    const mediaConverterLambda = new lambda.Function(this, mediaConverterLambdaName, {
+    // use NodejsFunction for better performance
+    const mediaConverterLambda = new NodejsFunction(this, mediaConverterLambdaName, {
       functionName: mediaConverterLambdaName,
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/mediaConverter'),  // Lambda code directory
+      handler: 'handler',
+      entry: 'lambda/mediaConverter/index.ts',  // Lambda code directory
       environment: {
         MEDIA_CONVERT_ENDPOINT: mediaConvertEndpoint,
         MEDIA_CONVERTER_ROLE_ARN: mediaConvertRole.roleArn,
-        // S3_BUCKET_UNPROCESSED_MEDIA: unprocessedMediaBucket.bucketName,
-        // S3_BUCKET_PROCESSED_MEDIA: processedMediaBucket.bucketName,
+        S3_BUCKET_UNPROCESSED_MEDIA: unprocessedMediaBucket.bucketName,
+        S3_BUCKET_PROCESSED_MEDIA: processedMediaBucket.bucketName,
       },
       role: mediaConvertLambdaRole,
-    });
-
+    })
+    
     // Create Lambda function to invoke Ec2 public IP
-    const updateVideoStatusLambda = new lambda.Function(this, updateVideoStatusLambdaName, {
+    const updateVideoStatusLambda = new NodejsFunction(this, updateVideoStatusLambdaName, {
       functionName: updateVideoStatusLambdaName,
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/updateVideoStatus'),  // Lambda code directory
+      handler: 'handler',
+      entry: 'lambda/updateVideoStatus/index.ts',  // Lambda code directory
       environment: {
-        LEARNING_PLATFORM_BASE_URL: ec2PublicIp
-      }
-    });
+        LEARNING_PLATFORM_BASE_URL: ec2PublicIp,
+      },
+    })
     
     unprocessedMediaBucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3n.LambdaDestination(mediaConverterLambda), {
       suffix: '.mp4',  // Trigger only for MP4 uploads

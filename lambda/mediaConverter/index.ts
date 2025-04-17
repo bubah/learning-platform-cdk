@@ -11,9 +11,11 @@ exports.handler = async (event: S3Event) => {
 
   const unprocessedFilePath = `s3://${unprocessedBucketName}/${inputKey}`;
   const outPutKey = inputKey.split("/").slice(0, -1).join("/") + "/";
-  const processedFilePath = `s3://learning-platform-dev-processed-media-output/${outPutKey}`;
+  const processedFilePath = `s3://${process.env.S3_BUCKET_PROCESSED_MEDIA}/${outPutKey}`;
   console.log("input key", inputKey)
   console.log("S3 Output URL", processedFilePath)
+  console.log("S3 Bucket proc med", process.env.S3_BUCKET_PROCESSED_MEDIA)
+  console.log("MediaConvert Role ARN", process.env.MEDIA_CONVERTER_ROLE_ARN)
 
 
   // Initialize MediaConvert
@@ -34,7 +36,7 @@ exports.handler = async (event: S3Event) => {
   });
 
   const params = {
-    Role: process.env.MEDIA_CONVERT_ROLE_ARN, // IAM role for MediaConvert
+    Role: process.env.MEDIA_CONVERTER_ROLE_ARN, // IAM role for MediaConvert
     Settings: {
       OutputGroups: [
         {

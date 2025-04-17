@@ -52,7 +52,7 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     this.ec2Instance = new ec2.Instance(this, `${id}-ec2-${props?.environment}-${props?.accountId}`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       keyPair,
-      machineImage: new ec2.AmazonLinuxImage(),
+      machineImage: ec2.MachineImage.latestAmazonLinux2(),
       securityGroup: ec2SecurityGroup,
       vpc: this.vpc,
       associatePublicIpAddress: true, // Ensure the instance has a public IP
