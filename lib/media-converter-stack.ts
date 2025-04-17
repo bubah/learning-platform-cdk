@@ -6,14 +6,10 @@ import * as AWS from 'aws-sdk';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { LpStackProps } from './interfaces';
 
-interface VpcStackProps extends cdk.StackProps {
-  environment: string; // Environment name (e.g., dev, prod)
-  accountId?: string; // AWS Account ID
-  whiteListedIps?: string[]; // Optional: List of IPs to whitelist for RDS access
-}
 export class MediaConverterStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: VpcStackProps) {
+  constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
     const uporcessedMediaBucketName = `${id}-unprocessed-media-${props?.environment}-${props?.accountId}`;
     const processedMediaBucketName = `${id}-processed-media-${props?.environment}-${props?.accountId}`;

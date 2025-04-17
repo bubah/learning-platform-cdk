@@ -2,20 +2,14 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
-
-
-interface VpcStackProps extends cdk.StackProps {
-  environment: string; // Environment name (e.g., dev, prod)
-  accountId?: string; // AWS Account ID
-  whiteListedIps?: string[]; // Optional: List of IPs to whitelist for RDS access
-}
+import { LpStackProps } from './interfaces';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly ec2Instance: ec2.Instance;
   public readonly rdsInstance: rds.DatabaseInstance;
 
-constructor(scope: Construct, id: string, props?: VpcStackProps) {
+constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
 
     // Create a VPC
@@ -61,7 +55,6 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
       },
     });
 
-
     // Create a security group for RDS
     const rdsSecurityGroup = new ec2.SecurityGroup(this, `${id}-sg-rds-${props?.environment}-${props?.accountId}`, {
         vpc: this.vpc,
@@ -88,7 +81,6 @@ constructor(scope: Construct, id: string, props?: VpcStackProps) {
     }
     );
 
-  
     // Create the RDS instance and associate the security group
     this.rdsInstance = new rds.DatabaseInstance(this, `${id}-rds-${props?.environment}-${props?.accountId}`, {
         engine: rds.DatabaseInstanceEngine.postgres({
