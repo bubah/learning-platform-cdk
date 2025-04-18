@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   cdk-check:
@@ -17,19 +17,22 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Type check
-        run: npm run type-check # or `tsc --noEmit`
+        run: npm run type-check # Make sure this script exists in package.json
 
       - name: Lint code
-        run: npm run lint # or `eslint .`
+        run: npm run lint
 
-      - name: Run unit tests
-        run: npm test # or `jest` or whatever test tool you use
+      - name: Ensure Docker is available
+        run: docker --version
 
       - name: CDK Synth
-        run: npx cdk synth
+        run: npx cdk synth --quiet
+
+      - name: Run unit tests
+        run: npm test
