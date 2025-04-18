@@ -61,12 +61,15 @@ constructor(scope: Construct, id: string, props?: LpStackProps) {
     })
 
     s3LpArtifacts.grantRead(ec2InstanceRole);
-    ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
-      actions: props?.lpArtifactStorage?.actions || [],
-      resources: [
-        props?.lpArtifactStorage?.arn!,
-      ],
-    }));
+    if (props?.lpArtifactStorage) {
+      ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
+        actions: props?.lpArtifactStorage?.actions || [],
+        resources: [
+          props?.lpArtifactStorage?.arn,
+        ],
+      }));
+    }
+
     this.ec2Instance = new ec2.Instance(this, `${id}-ec2-${props?.environment}-${props?.accountId}`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       keyPair,

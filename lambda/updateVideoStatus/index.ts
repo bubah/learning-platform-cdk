@@ -1,4 +1,4 @@
-const http = require("http"); // Use if your EC2 API is not HTTPS
+import * as http from "http";
 import { S3Event } from "aws-lambda";
 
 exports.handler = async (event: S3Event) => {

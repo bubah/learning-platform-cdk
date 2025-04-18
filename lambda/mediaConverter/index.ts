@@ -1,4 +1,4 @@
-const AWS = require('aws-sdk');
+import * as AWS from "aws-sdk";
 import { S3Event } from "aws-lambda";
 
 exports.handler = async (event: S3Event) => {
