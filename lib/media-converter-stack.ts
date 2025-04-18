@@ -22,7 +22,8 @@ export class MediaConverterStack extends cdk.Stack {
     const unprocessedMediaBucket = new s3.Bucket(this, uporcessedMediaBucketName, {
       bucketName: uporcessedMediaBucketName,
       encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,  // Change based on your need
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
       publicReadAccess: true,
       blockPublicAccess: new s3.BlockPublicAccess({
         blockPublicAcls: false,
@@ -35,7 +36,8 @@ export class MediaConverterStack extends cdk.Stack {
     const processedMediaBucket = new s3.Bucket(this, processedMediaBucketName, {
       bucketName: processedMediaBucketName,
       encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,  // Change based on your need
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
       publicReadAccess: true,
       blockPublicAccess: new s3.BlockPublicAccess({
         blockPublicAcls: false,

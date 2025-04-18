@@ -8,8 +8,10 @@
     "build": "tsc",
     "cdk:diff": "cdk diff",
     "cdk:deploy": "cdk deploy",
-    "diff:dev": "npm run cdk:diff -- --profile cdk-deploy-dev -c env=dev",
-    "deploy:dev": "npm run cdk:deploy -- --profile cdk-deploy-dev -c env=dev",
+    "cdk:destroy": "cdk destroy",
+    "cdk:diff:dev": "npm run cdk:diff -- --profile cdk-deploy-dev -c env=dev",
+    "cdk:deploy:dev": "npm run cdk:deploy -- --profile cdk-deploy-dev -c env=dev",
+    "cdk:destroy:dev": "npm run cdk:destroy -- --profile cdk-deploy-dev -c env=dev",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk"

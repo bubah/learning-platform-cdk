@@ -1,8 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as path from 'path';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { LpStackProps } from './interfaces';
+import { readFileSync } from 'fs';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -43,6 +47,26 @@ constructor(scope: Construct, id: string, props?: LpStackProps) {
 
     // Create an EC2 instance within the VPC
     const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
+
+    // Load user data script
+    const scriptPath = path.join(__dirname, 'scripts', 'user-data.sh');
+    const userDataScript = readFileSync(scriptPath, 'utf8');
+
+    // Import the existing S3 bucket by name
+    const s3LpArtifacts = s3.Bucket.fromBucketName(this, 'MyAppBucket', 'your-existing-bucket-name');
+
+    const ec2InstanceRole = new iam.Role(this, `${id}-role-ec2-${props?.environment}-${props?.accountId}`, {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+      roleName: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
+    })
+
+    s3LpArtifacts.grantRead(ec2InstanceRole);
+    ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
+      actions: props?.lpArtifactStorage?.actions || [],
+      resources: [
+        props?.lpArtifactStorage?.arn!,
+      ],
+    }));
     this.ec2Instance = new ec2.Instance(this, `${id}-ec2-${props?.environment}-${props?.accountId}`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       keyPair,
@@ -53,6 +77,8 @@ constructor(scope: Construct, id: string, props?: LpStackProps) {
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC, // Ensure EC2 is in public subnets
       },
+      role: ec2InstanceRole,
+      userData: ec2.UserData.custom(userDataScript),
     });
 
     // Create a security group for RDS
