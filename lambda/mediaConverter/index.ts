@@ -24,6 +24,9 @@ exports.handler = async (event: S3Event) => {
   let endpoint;
   try {
     const endpointResponse = await mediaConverter.describeEndpoints().promise();
+    if (!endpointResponse.Endpoints || endpointResponse.Endpoints.length === 0) {
+      throw new Error("No MediaConvert endpoints found.");
+    }
     endpoint = endpointResponse.Endpoints[0].Url;
   } catch (err) {
     console.error("Error getting MediaConvert endpoint:", err);
@@ -36,7 +39,7 @@ exports.handler = async (event: S3Event) => {
   });
 
   const params = {
-    Role: process.env.MEDIA_CONVERTER_ROLE_ARN, // IAM role for MediaConvert
+    Role: process.env.MEDIA_CONVERTER_ROLE_ARN || "", // Ensure Role is a string
     Settings: {
       OutputGroups: [
         {
@@ -97,12 +100,16 @@ exports.handler = async (event: S3Event) => {
 
   try {
     const job = await mediaConvertClient.createJob(params).promise();
-    console.log("MediaConvert job created:", job.Job.Id);
+    if (job.Job && job.Job.Id) {
+      console.log("MediaConvert job created:", job.Job.Id);
+    } else {
+      console.error("MediaConvert job creation failed: Job or Job.Id is undefined.");
+    }
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: "HLS MediaConvert job submitted",
-        jobId: job.Job.Id,
+        jobId: job.Job?.Id ?? "unknown",
       }),
     };
   } catch (error) {
