@@ -23,7 +23,7 @@ jobs:
         run: npm ci
 
       - name: Type check
-        run: npm run type-check # Make sure this script exists in package.json
+        run: npm run typecheck # Make sure this script exists in package.json
 
       - name: Lint code
         run: npm run lint
