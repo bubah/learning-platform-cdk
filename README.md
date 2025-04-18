@@ -10,10 +10,10 @@ Run the following command if running cdk deploy for the first time in aws accoun
 
 ## Useful commands
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npm run deploy:<environment>` deploy this stack to your default AWS account/region for the specified env (i.e dev, test, stage, prod)
-* `npm run diff:<environment>`   compare deployed stack with current state for the specified environment (i.e dev, test, stage, prod)
-* `npx cdk synth`   emits the synthesized CloudFormation template
+- `npm run build` compile typescript to js
+- `npm run watch` watch for changes and compile
+- `npm run test` perform the jest unit tests
+- `npx cdk deploy` deploy this stack to your default AWS account/region
+- `npm run deploy:<environment>` deploy this stack to your default AWS account/region for the specified env (i.e dev, test, stage, prod)
+- `npm run diff:<environment>` compare deployed stack with current state for the specified environment (i.e dev, test, stage, prod)
+- `npx cdk synth` emits the synthesized CloudFormation template
