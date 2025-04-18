@@ -8,22 +8,22 @@ const app = new cdk.App();
 const env = app.node.tryGetContext('env'); // Default to 'dev' if not provided
 // Environment Configuration
 const config: IEnvConfig = {
-    dev: {
-        accountId: "805358685077", // Replace with your actual account ID
-        region: 'us-east-1', // Replace with your desired region
-        environment: 'dev',
-        whiteListedIps: ["172.56.35.116/32", "162.83.152.212/32", "100.33.64.132/32"], // Replace with your actual IPs
-        lpArtifactStorage: {
-            actions: ['ssm:GetParameter', 'ssm:GetParameters', 'ssm:GetParametersByPath'],
-            arn: "arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*"
-        }
-    }
-}
+  dev: {
+    accountId: '805358685077', // Replace with your actual account ID
+    region: 'us-east-1', // Replace with your desired region
+    environment: 'dev',
+    whiteListedIps: ['172.56.35.116/32', '162.83.152.212/32', '100.33.64.132/32'], // Replace with your actual IPs
+    lpArtifactStorage: {
+      actions: ['ssm:GetParameter', 'ssm:GetParameters', 'ssm:GetParametersByPath'],
+      arn: 'arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*',
+    },
+  },
+};
 
-const selectedEnvConfig = config[env]
+const selectedEnvConfig = config[env];
 
 if (!selectedEnvConfig) {
-    throw new Error(`Environment configuration for '${env}' not found.`);
+  throw new Error(`Environment configuration for '${env}' not found.`);
 }
 
 const vpcStack = new VpcStack(app, 'lp-vpcstack', selectedEnvConfig);

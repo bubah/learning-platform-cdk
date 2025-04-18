@@ -18,7 +18,6 @@ export class MediaConverterStack extends cdk.Stack {
     const updateVideoStatusLambdaName = `${id}-lambda-update-status-${props?.environment}-${props?.accountId}`;
     const mediaConverterLambdaName = `${id}-lambda-mdia-conv-${props?.environment}-${props?.accountId}`;
 
-  
     const unprocessedMediaBucket = new s3.Bucket(this, uporcessedMediaBucketName, {
       bucketName: uporcessedMediaBucketName,
       encryption: s3.BucketEncryption.S3_MANAGED,
@@ -97,7 +96,7 @@ export class MediaConverterStack extends cdk.Stack {
       functionName: mediaConverterLambdaName,
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
-      entry: 'lambda/mediaConverter/index.ts',  // Lambda code directory
+      entry: 'lambda/mediaConverter/index.ts', // Lambda code directory
       environment: {
         MEDIA_CONVERT_ENDPOINT: mediaConvertEndpoint,
         MEDIA_CONVERTER_ROLE_ARN: mediaConvertRole.roleArn,
@@ -105,24 +104,32 @@ export class MediaConverterStack extends cdk.Stack {
         S3_BUCKET_PROCESSED_MEDIA: processedMediaBucket.bucketName,
       },
       role: mediaConvertLambdaRole,
-    })
-    
+    });
+
     // Create Lambda function to invoke Ec2 public IP
     const updateVideoStatusLambda = new NodejsFunction(this, updateVideoStatusLambdaName, {
       functionName: updateVideoStatusLambdaName,
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
-      entry: 'lambda/updateVideoStatus/index.ts',  // Lambda code directory
+      entry: 'lambda/updateVideoStatus/index.ts', // Lambda code directory
       environment: {
         LEARNING_PLATFORM_BASE_URL: ec2PublicIp,
       },
-    })
-    
-    unprocessedMediaBucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3n.LambdaDestination(mediaConverterLambda), {
-      suffix: '.mp4',  // Trigger only for MP4 uploads
     });
-    processedMediaBucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3n.LambdaDestination(updateVideoStatusLambda), {
-      suffix: '.m3u8',  // Trigger only for MP4 uploads
-    });
+
+    unprocessedMediaBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(mediaConverterLambda),
+      {
+        suffix: '.mp4', // Trigger only for MP4 uploads
+      }
+    );
+    processedMediaBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(updateVideoStatusLambda),
+      {
+        suffix: '.m3u8', // Trigger only for MP4 uploads
+      }
+    );
   }
 }
