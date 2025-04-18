@@ -1,0 +1,35 @@
+name: CDK Code Checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cdk-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npm run type-check # or `tsc --noEmit`
+
+      - name: Lint code
+        run: npm run lint # or `eslint .`
+
+      - name: Run unit tests
+        run: npm test # or `jest` or whatever test tool you use
+
+      - name: CDK Synth
+        run: npx cdk synth
