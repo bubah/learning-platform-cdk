@@ -8,6 +8,7 @@ import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LpStackProps } from './interfaces';
 
+
 export class MediaConverterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
@@ -45,6 +46,23 @@ export class MediaConverterStack extends cdk.Stack {
         restrictPublicBuckets: false,
       }),
     });
+
+    const ec2RoleName = cdk.Fn.importValue('EC2RoleName');
+
+    const ec2Role = iam.Role.fromRoleName(this, 'ExistingEc2Role', ec2RoleName);
+    // Create the S3 bucket
+    const artifactBucketName = `${id}-artifact-repo-${props?.environment}-${props?.accountId}`;
+    const appJarBucket = new s3.Bucket(this, artifactBucketName, {
+      bucketName: artifactBucketName,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      publicReadAccess: false,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    });
+
+    appJarBucket.grantRead(ec2Role);
+    
 
     const mediaConvertRole = new iam.Role(this, mediaConverterRoleName, {
       assumedBy: new iam.ServicePrincipal('mediaconvert.amazonaws.com'),

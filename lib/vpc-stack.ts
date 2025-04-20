@@ -72,6 +72,17 @@ export class VpcStack extends cdk.Stack {
       }
     );
 
+    ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'ssm:GetParameter',
+        'ssm:GetParameters',
+        'ssm:GetParametersByPath'
+      ],
+      resources: [
+        'arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*'
+      ],
+    }));
+
     s3LpArtifacts.grantRead(ec2InstanceRole);
     if (props?.lpArtifactStorage) {
       ec2InstanceRole.addToPolicy(
@@ -155,5 +166,12 @@ export class VpcStack extends cdk.Stack {
       value: this.ec2Instance.instancePublicIp,
       exportName: 'EC2PublicIP', // Can be imported by other stacks
     });
+  
+    // Output EC2 Role (for use by other stacks)
+    new cdk.CfnOutput(this, 'EC2RoleName', {
+      value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
+      exportName: 'EC2RoleName', // Can be imported by other stacks
+    });
   }
 }
+
