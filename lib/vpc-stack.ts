@@ -72,6 +72,10 @@ export class VpcStack extends cdk.Stack {
       }
     );
 
+    ec2InstanceRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+    );
+
     ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
       actions: [
         'ssm:GetParameter',
@@ -171,6 +175,11 @@ export class VpcStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'EC2RoleName', {
       value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
       exportName: 'EC2RoleName', // Can be imported by other stacks
+    });
+
+    new cdk.CfnOutput(this, 'Ec2InstanceId', {
+      value: this.ec2Instance.instanceId,
+      exportName: 'Ec2InstanceId', // Optional, for cross-stack use
     });
   }
 }

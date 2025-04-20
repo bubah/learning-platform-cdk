@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { MediaConverterStack } from '../lib/media-converter-stack';
 import { IEnvConfig } from '../lib/interfaces';
+import { ContinousDeplymentStack } from '../lib/continous-deployment-stack';
 
 const app = new cdk.App();
 const env = app.node.tryGetContext('env'); // Default to 'dev' if not provided
@@ -28,4 +29,10 @@ if (!selectedEnvConfig) {
 
 const vpcStack = new VpcStack(app, 'lp-vpcstack', selectedEnvConfig);
 const mediaConverterStack = new MediaConverterStack(app, 'lp-mediaconvstack', selectedEnvConfig);
+const continuousDeploymentStack = new ContinousDeplymentStack(app, 'lp-cdeploystack', selectedEnvConfig);
 mediaConverterStack.node.addDependency(vpcStack);
+mediaConverterStack.node.addDependency(continuousDeploymentStack);
+continuousDeploymentStack.node.addDependency(vpcStack);
+
+
+
