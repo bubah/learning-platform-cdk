@@ -6,7 +6,16 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { LpStackProps } from './interfaces';
 import { readFileSync } from 'fs';
-import { EC2_INSTANCE_ID, EC2_PUBLIC_IP, EC2_ROLE_NAME, LP_EC2_ROLE_ACTIONS, AMAZON_SSM_MANAGED_INSTANCE_CORE, keyPairName, PARAM_STORE_DEV_ARN, EC2_SERVICE } from './constants';
+import {
+  EC2_INSTANCE_ID,
+  EC2_PUBLIC_IP,
+  EC2_ROLE_NAME,
+  LP_EC2_ROLE_ACTIONS,
+  AMAZON_SSM_MANAGED_INSTANCE_CORE,
+  keyPairName,
+  PARAM_STORE_DEV_ARN,
+  EC2_SERVICE,
+} from './constants';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -69,12 +78,12 @@ export class VpcStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName(AMAZON_SSM_MANAGED_INSTANCE_CORE)
     );
 
-    ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
-      actions: LP_EC2_ROLE_ACTIONS,
-      resources: [
-        PARAM_STORE_DEV_ARN
-      ],
-    }));
+    ec2InstanceRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: LP_EC2_ROLE_ACTIONS,
+        resources: [PARAM_STORE_DEV_ARN],
+      })
+    );
 
     this.ec2Instance = new ec2.Instance(
       this,
@@ -149,7 +158,7 @@ export class VpcStack extends cdk.Stack {
       value: this.ec2Instance.instancePublicIp,
       exportName: EC2_PUBLIC_IP, // Can be imported by other stacks
     });
-  
+
     // Output EC2 Role (for use by other stacks)
     new cdk.CfnOutput(this, EC2_ROLE_NAME, {
       value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
@@ -162,4 +171,3 @@ export class VpcStack extends cdk.Stack {
     });
   }
 }
-
