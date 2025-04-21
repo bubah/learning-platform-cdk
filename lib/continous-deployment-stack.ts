@@ -6,6 +6,7 @@ import {
   CDK_REPO_ACTIONS,
   EC2_INSTANCE_ID,
   GIT_ACTION_ROLE_NAME,
+  GITHUB_OIDC_TOKEN_URL,
   LP_CDK_REPO,
   LP_SERVICE_REPO,
   SSM_SEND_COMMAND,
@@ -27,29 +28,29 @@ export class ContinousDeplymentStack extends cdk.Stack {
 
     const ec2InstanceId = cdk.Fn.importValue(EC2_INSTANCE_ID);
 
+    // 1. Create OIDC provider for GitHub
+    const oidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOIDCProvider', {
+      url: GITHUB_OIDC_TOKEN_URL,
+      clientIds: [STS_SERVICE],
+    });
+
     const lpSvcRepoGitActionRole = new iam.Role(this, gitActionLpRoleName, {
-      assumedBy: new iam.WebIdentityPrincipal(
-        `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
-        {
-          StringEquals: {
-            'token.actions.githubusercontent.com:aud': STS_SERVICE,
-            [`token.actions.githubusercontent.com:sub`]: `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
-          },
-        }
-      ),
+      assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': STS_SERVICE,
+          [`token.actions.githubusercontent.com:sub`]: `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
+        },
+      }),
       roleName: gitActionLpRoleName,
     });
 
     const cdkRepoGitActionRole = new iam.Role(this, gitActionCdkPipelineRoleName, {
-      assumedBy: new iam.WebIdentityPrincipal(
-        `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
-        {
-          StringEquals: {
-            'token.actions.githubusercontent.com:aud': STS_SERVICE,
-            [`token.actions.githubusercontent.com:sub`]: `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
-          },
-        }
-      ),
+      assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': STS_SERVICE,
+          [`token.actions.githubusercontent.com:sub`]: `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
+        },
+      }),
       roleName: gitActionCdkPipelineRoleName,
     });
 
