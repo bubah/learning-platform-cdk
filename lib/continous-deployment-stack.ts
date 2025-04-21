@@ -60,6 +60,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
         resources: [
           `arn:aws:ec2:${this.region}:${this.account}:instance/${ec2InstanceId}`, // Your EC2 instance
           `arn:aws:ssm:${this.region}:${this.account}:document/AWS-RunShellScript`,
+          `arn:aws:ssm:${this.region}:${this.account}:*`,
         ],
       })
     );
