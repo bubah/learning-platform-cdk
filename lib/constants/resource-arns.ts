@@ -1,0 +1,1 @@
+export const PARAM_STORE_DEV_ARN = 'arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*';

@@ -1,12 +1,21 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as path from 'path';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as rds from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
-import { LpStackProps } from './interfaces';
 import { readFileSync } from 'fs';
+import * as path from 'path';
+import {
+  AMAZON_SSM_MANAGED_INSTANCE_CORE,
+  EC2_INSTANCE_ID,
+  EC2_PUBLIC_IP,
+  EC2_ROLE_NAME,
+  EC2_SERVICE,
+  keyPairName,
+  LP_EC2_ROLE_ACTIONS,
+  PARAM_STORE_DEV_ARN,
+} from './constants';
+import { LpStackProps } from './interfaces';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -50,52 +59,31 @@ export class VpcStack extends cdk.Stack {
     ec2SecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS access');
 
     // Create an EC2 instance within the VPC
-    const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
+    const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', keyPairName);
 
     // Load user data script
     const scriptPath = path.join(__dirname, 'scripts', 'user-data.sh');
     const userDataScript = readFileSync(scriptPath, 'utf8');
 
-    // Import the existing S3 bucket by name
-    const s3LpArtifacts = s3.Bucket.fromBucketName(
-      this,
-      'MyAppBucket',
-      'your-existing-bucket-name'
-    );
-
     const ec2InstanceRole = new iam.Role(
       this,
       `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
       {
-        assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        assumedBy: new iam.ServicePrincipal(EC2_SERVICE),
         roleName: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
       }
     );
 
     ec2InstanceRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+      iam.ManagedPolicy.fromAwsManagedPolicyName(AMAZON_SSM_MANAGED_INSTANCE_CORE)
     );
 
-    ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'ssm:GetParameter',
-        'ssm:GetParameters',
-        'ssm:GetParametersByPath'
-      ],
-      resources: [
-        'arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*'
-      ],
-    }));
-
-    s3LpArtifacts.grantRead(ec2InstanceRole);
-    if (props?.lpArtifactStorage) {
-      ec2InstanceRole.addToPolicy(
-        new iam.PolicyStatement({
-          actions: props?.lpArtifactStorage?.actions || [],
-          resources: [props?.lpArtifactStorage?.arn],
-        })
-      );
-    }
+    ec2InstanceRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: LP_EC2_ROLE_ACTIONS,
+        resources: [PARAM_STORE_DEV_ARN],
+      })
+    );
 
     this.ec2Instance = new ec2.Instance(
       this,
@@ -166,21 +154,20 @@ export class VpcStack extends cdk.Stack {
     );
 
     // Output EC2 public IP (for use by other stacks)
-    new cdk.CfnOutput(this, 'EC2PublicIP', {
+    new cdk.CfnOutput(this, EC2_PUBLIC_IP, {
       value: this.ec2Instance.instancePublicIp,
-      exportName: 'EC2PublicIP', // Can be imported by other stacks
-    });
-  
-    // Output EC2 Role (for use by other stacks)
-    new cdk.CfnOutput(this, 'EC2RoleName', {
-      value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
-      exportName: 'EC2RoleName', // Can be imported by other stacks
+      exportName: EC2_PUBLIC_IP, // Can be imported by other stacks
     });
 
-    new cdk.CfnOutput(this, 'Ec2InstanceId', {
+    // Output EC2 Role (for use by other stacks)
+    new cdk.CfnOutput(this, EC2_ROLE_NAME, {
+      value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
+      exportName: EC2_ROLE_NAME, // Can be imported by other stacks
+    });
+
+    new cdk.CfnOutput(this, EC2_INSTANCE_ID, {
       value: this.ec2Instance.instanceId,
-      exportName: 'Ec2InstanceId', // Optional, for cross-stack use
+      exportName: EC2_INSTANCE_ID, // Optional, for cross-stack use
     });
   }
 }
-

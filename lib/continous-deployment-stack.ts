@@ -1,44 +1,78 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import {
+  BRANCH,
+  CDK_REPO_ACTIONS,
+  EC2_INSTANCE_ID,
+  GIT_ACTION_ROLE_NAME,
+  LP_CDK_REPO,
+  LP_SERVICE_REPO,
+  SSM_SEND_COMMAND,
+  STS_SERVICE,
+  WILDCARD,
+} from './constants';
 import { LpStackProps } from './interfaces';
 
 export class ContinousDeplymentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
 
-    const repo = "bubah/learning-platform";
-    const branch = "master";
+    const lpServiceRepo = LP_SERVICE_REPO;
+    const lpCdkRepo = LP_CDK_REPO;
+    const branch = BRANCH.master;
 
-    const gitActionRoleName = `${id}-role-git-action-${props?.environment}-${props?.accountId}`;
+    const gitActionLpRoleName = `${id}-role-git-action-${props?.environment}-${props?.accountId}`;
+    const gitActionCdkPipelineRoleName = `${id}-role-git-action-cdk-pipeline-${props?.environment}-${props?.accountId}`;
 
-    const ec2InstanceId = cdk.Fn.importValue('Ec2InstanceId');
+    const ec2InstanceId = cdk.Fn.importValue(EC2_INSTANCE_ID);
 
-    const gitActionRole = new iam.Role(this, gitActionRoleName, {
+    const lpSvcRepoGitActionRole = new iam.Role(this, gitActionLpRoleName, {
       assumedBy: new iam.WebIdentityPrincipal(
         `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
         {
           StringEquals: {
-            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-            [`token.actions.githubusercontent.com:sub`]: `repo:${repo}:ref:refs/heads/${branch}`,
+            'token.actions.githubusercontent.com:aud': STS_SERVICE,
+            [`token.actions.githubusercontent.com:sub`]: `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
           },
         }
       ),
-      roleName: gitActionRoleName,
+      roleName: gitActionLpRoleName,
     });
 
-    gitActionRole.addToPolicy(new iam.PolicyStatement({
-        actions: ["ssm:SendCommand"],
+    const cdkRepoGitActionRole = new iam.Role(this, gitActionCdkPipelineRoleName, {
+      assumedBy: new iam.WebIdentityPrincipal(
+        `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
+        {
+          StringEquals: {
+            'token.actions.githubusercontent.com:aud': STS_SERVICE,
+            [`token.actions.githubusercontent.com:sub`]: `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
+          },
+        }
+      ),
+      roleName: gitActionCdkPipelineRoleName,
+    });
+
+    lpSvcRepoGitActionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [SSM_SEND_COMMAND],
         resources: [
           `arn:aws:ec2:${this.region}:${this.account}:instance/${ec2InstanceId}`, // Your EC2 instance
-          `arn:aws:ssm:${this.region}:${this.account}:document/AWS-RunShellScript`
-        ]
-      }));
+          `arn:aws:ssm:${this.region}:${this.account}:document/AWS-RunShellScript`,
+        ],
+      })
+    );
 
+    cdkRepoGitActionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: CDK_REPO_ACTIONS,
+        resources: [WILDCARD],
+      })
+    );
 
-     new cdk.CfnOutput(this,'GitActionRoleName', {
-          value: gitActionRoleName,
-          exportName: 'GitActionRoleName', // Can be imported by other stacks
-        });
+    new cdk.CfnOutput(this, 'GitActionRoleName', {
+      value: gitActionLpRoleName,
+      exportName: GIT_ACTION_ROLE_NAME, // Can be imported by other stacks
+    });
   }
 }
