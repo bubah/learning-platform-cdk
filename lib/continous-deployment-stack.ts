@@ -12,7 +12,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
 
     const gitActionRoleName = `${id}-role-git-action-${props?.environment}-${props?.accountId}`;
 
-    const ec2InstanceId = cdk.Fn.importValue('EC2InstanceId');
+    const ec2InstanceId = cdk.Fn.importValue('Ec2InstanceId');
 
     const gitActionRole = new iam.Role(this, gitActionRoleName, {
       assumedBy: new iam.WebIdentityPrincipal(
