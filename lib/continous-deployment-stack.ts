@@ -2,7 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { LpStackProps } from './interfaces';
-import { BRANCH, CDK_REPO_ACTIONS, EC2_INSTANCE_ID, GIT_ACTION_ROLE_NAME, LP_CDK_REPO, LP_SERVICE_REPO, SSM_SEND_COMMAND, STS_SERVICE, WILDCARD } from './constants';
+import {
+  BRANCH,
+  CDK_REPO_ACTIONS,
+  EC2_INSTANCE_ID,
+  GIT_ACTION_ROLE_NAME,
+  LP_CDK_REPO,
+  LP_SERVICE_REPO,
+  SSM_SEND_COMMAND,
+  STS_SERVICE,
+  WILDCARD,
+} from './constants';
 
 export class ContinousDeplymentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
@@ -22,7 +32,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
         `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
         {
           StringEquals: {
-            "token.actions.githubusercontent.com:aud": STS_SERVICE,
+            'token.actions.githubusercontent.com:aud': STS_SERVICE,
             [`token.actions.githubusercontent.com:sub`]: `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
           },
         }
@@ -35,7 +45,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
         `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`,
         {
           StringEquals: {
-            "token.actions.githubusercontent.com:aud": STS_SERVICE,
+            'token.actions.githubusercontent.com:aud': STS_SERVICE,
             [`token.actions.githubusercontent.com:sub`]: `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
           },
         }
@@ -43,13 +53,15 @@ export class ContinousDeplymentStack extends cdk.Stack {
       roleName: gitActionCdkPipelineRoleName,
     });
 
-    lpSvcRepoGitActionRole.addToPolicy(new iam.PolicyStatement({
+    lpSvcRepoGitActionRole.addToPolicy(
+      new iam.PolicyStatement({
         actions: [SSM_SEND_COMMAND],
         resources: [
           `arn:aws:ec2:${this.region}:${this.account}:instance/${ec2InstanceId}`, // Your EC2 instance
-          `arn:aws:ssm:${this.region}:${this.account}:document/AWS-RunShellScript`
-        ]
-    }));
+          `arn:aws:ssm:${this.region}:${this.account}:document/AWS-RunShellScript`,
+        ],
+      })
+    );
 
     cdkRepoGitActionRole.addToPolicy(
       new iam.PolicyStatement({
@@ -57,10 +69,10 @@ export class ContinousDeplymentStack extends cdk.Stack {
         resources: [WILDCARD],
       })
     );
-  
-     new cdk.CfnOutput(this,'GitActionRoleName', {
-          value: gitActionLpRoleName,
-          exportName: GIT_ACTION_ROLE_NAME, // Can be imported by other stacks
-      });
+
+    new cdk.CfnOutput(this, 'GitActionRoleName', {
+      value: gitActionLpRoleName,
+      exportName: GIT_ACTION_ROLE_NAME, // Can be imported by other stacks
+    });
   }
 }

@@ -1,8 +1,9 @@
-mkdir -p .husky/_
-cat << 'EOF' > .husky/_/husky.sh
-#!/bin/sh
-# shellcheck disable=SC1090
-. "$(git rev-parse --show-toplevel)/node_modules/husky/husky.sh"
-EOF
+echo "husky - DEPRECATED
 
-chmod +x .husky/_/husky.sh
+Please remove the following two lines from $0:
+
+#!/usr/bin/env sh
+. \"\$(dirname -- \"\$0\")/_/husky.sh\"
+
+They WILL FAIL in v10.0.0
+"
