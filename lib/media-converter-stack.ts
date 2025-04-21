@@ -9,7 +9,6 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LpStackProps } from './interfaces';
 import { AWS_LAMBDA_BASIC_EXECUTION_ROLE, AWS_MEDIA_CONVERT_FULL_ACCESS, EC2_PUBLIC_IP, EC2_ROLE_NAME, EXT_M3U8, EXT_MP4, GIT_ACTION_ROLE_NAME, IAM_PASS_ROLE, LAMBDA_SERVICE, MEDIA_CONVERT_SERVICE, REGIONS } from './constants';
 
-
 export class MediaConverterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
