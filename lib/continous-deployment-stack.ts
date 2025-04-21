@@ -1,7 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
-import { LpStackProps } from './interfaces';
 import {
   BRANCH,
   CDK_REPO_ACTIONS,
@@ -13,6 +12,7 @@ import {
   STS_SERVICE,
   WILDCARD,
 } from './constants';
+import { LpStackProps } from './interfaces';
 
 export class ContinousDeplymentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {

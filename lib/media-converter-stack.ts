@@ -1,15 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as AWS from 'aws-sdk';
-import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
-import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { LpStackProps } from './interfaces';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
+import * as AWS from 'aws-sdk';
+import { Construct } from 'constructs';
 import {
   AWS_LAMBDA_BASIC_EXECUTION_ROLE,
-  AWS_MEDIA_CONVERT_FULL_ACCESS,
   EC2_PUBLIC_IP,
   EC2_ROLE_NAME,
   EXT_M3U8,
@@ -20,6 +18,7 @@ import {
   MEDIA_CONVERT_SERVICE,
   REGIONS,
 } from './constants';
+import { LpStackProps } from './interfaces';
 
 export class MediaConverterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {

@@ -1,21 +1,21 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as path from 'path';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as rds from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
-import { LpStackProps } from './interfaces';
 import { readFileSync } from 'fs';
+import * as path from 'path';
 import {
+  AMAZON_SSM_MANAGED_INSTANCE_CORE,
   EC2_INSTANCE_ID,
   EC2_PUBLIC_IP,
   EC2_ROLE_NAME,
-  LP_EC2_ROLE_ACTIONS,
-  AMAZON_SSM_MANAGED_INSTANCE_CORE,
-  keyPairName,
-  PARAM_STORE_DEV_ARN,
   EC2_SERVICE,
+  keyPairName,
+  LP_EC2_ROLE_ACTIONS,
+  PARAM_STORE_DEV_ARN,
 } from './constants';
+import { LpStackProps } from './interfaces';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
