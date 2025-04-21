@@ -7,6 +7,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { LpStackProps } from './interfaces';
 import { readFileSync } from 'fs';
+import { EC2_INSTANCE_ID, EC2_PUBLIC_IP, EC2_ROLE_NAME, LP_EC2_ROLE_ACTIONS, AMAZON_SSM_MANAGED_INSTANCE_CORE, keyPairName, PARAM_STORE_DEV_ARN } from './constants';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -50,18 +51,11 @@ export class VpcStack extends cdk.Stack {
     ec2SecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS access');
 
     // Create an EC2 instance within the VPC
-    const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'learning-platform-aws-acc-2');
+    const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', keyPairName);
 
     // Load user data script
     const scriptPath = path.join(__dirname, 'scripts', 'user-data.sh');
     const userDataScript = readFileSync(scriptPath, 'utf8');
-
-    // Import the existing S3 bucket by name
-    const s3LpArtifacts = s3.Bucket.fromBucketName(
-      this,
-      'MyAppBucket',
-      'your-existing-bucket-name'
-    );
 
     const ec2InstanceRole = new iam.Role(
       this,
@@ -73,29 +67,15 @@ export class VpcStack extends cdk.Stack {
     );
 
     ec2InstanceRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+      iam.ManagedPolicy.fromAwsManagedPolicyName(AMAZON_SSM_MANAGED_INSTANCE_CORE)
     );
 
     ec2InstanceRole.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'ssm:GetParameter',
-        'ssm:GetParameters',
-        'ssm:GetParametersByPath'
-      ],
+      actions: LP_EC2_ROLE_ACTIONS,
       resources: [
-        'arn:aws:ssm:us-east-1:805358685077:parameter/lp/dev/*'
+        PARAM_STORE_DEV_ARN
       ],
     }));
-
-    s3LpArtifacts.grantRead(ec2InstanceRole);
-    if (props?.lpArtifactStorage) {
-      ec2InstanceRole.addToPolicy(
-        new iam.PolicyStatement({
-          actions: props?.lpArtifactStorage?.actions || [],
-          resources: [props?.lpArtifactStorage?.arn],
-        })
-      );
-    }
 
     this.ec2Instance = new ec2.Instance(
       this,
@@ -166,20 +146,20 @@ export class VpcStack extends cdk.Stack {
     );
 
     // Output EC2 public IP (for use by other stacks)
-    new cdk.CfnOutput(this, 'EC2PublicIP', {
+    new cdk.CfnOutput(this, EC2_PUBLIC_IP, {
       value: this.ec2Instance.instancePublicIp,
-      exportName: 'EC2PublicIP', // Can be imported by other stacks
+      exportName: EC2_PUBLIC_IP, // Can be imported by other stacks
     });
   
     // Output EC2 Role (for use by other stacks)
-    new cdk.CfnOutput(this, 'EC2RoleName', {
+    new cdk.CfnOutput(this, EC2_ROLE_NAME, {
       value: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
-      exportName: 'EC2RoleName', // Can be imported by other stacks
+      exportName: EC2_ROLE_NAME, // Can be imported by other stacks
     });
 
-    new cdk.CfnOutput(this, 'Ec2InstanceId', {
+    new cdk.CfnOutput(this, EC2_INSTANCE_ID, {
       value: this.ec2Instance.instanceId,
-      exportName: 'Ec2InstanceId', // Optional, for cross-stack use
+      exportName: EC2_INSTANCE_ID, // Optional, for cross-stack use
     });
   }
 }

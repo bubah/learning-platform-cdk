@@ -7,6 +7,7 @@ import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LpStackProps } from './interfaces';
+import { AWS_LAMBDA_BASIC_EXECUTION_ROLE, AWS_MEDIA_CONVERT_FULL_ACCESS, EC2_PUBLIC_IP, EC2_ROLE_NAME, EXT_M3U8, EXT_MP4, GIT_ACTION_ROLE_NAME, IAM_PASS_ROLE, US_EAST_1 } from './constants';
 
 
 export class MediaConverterStack extends cdk.Stack {
@@ -48,8 +49,8 @@ export class MediaConverterStack extends cdk.Stack {
     });
 
     // EC2 role name to read from s3 bucket and GitHub role name to write to s3 bucket
-    const ec2RoleName = cdk.Fn.importValue('EC2RoleName');
-    const gitActionRoleName = cdk.Fn.importValue('GitActionRoleName');
+    const ec2RoleName = cdk.Fn.importValue(EC2_ROLE_NAME);
+    const gitActionRoleName = cdk.Fn.importValue(GIT_ACTION_ROLE_NAME);
 
     // Roles to read and write to s3 bucket, EC2  = read; Github = write. 
     const ec2Role = iam.Role.fromRoleName(this, 'ExistingEc2Role', ec2RoleName);
@@ -84,7 +85,7 @@ export class MediaConverterStack extends cdk.Stack {
     processedMediaBucket.grantWrite(mediaConvertRole);
 
     // Use AWS SDK to get MediaConvert endpoint
-    const mediaConvertClient = new AWS.MediaConvert({ region: 'us-east-1' });
+    const mediaConvertClient = new AWS.MediaConvert({ region: US_EAST_1 });
     const mediaConvertEndpoint = mediaConvertClient.endpoint.hostname; // Extract hostname as string
 
     // Lambda execution role with all necessary policies
@@ -96,11 +97,11 @@ export class MediaConverterStack extends cdk.Stack {
 
     // ✅ Allow basic Lambda logging
     mediaConvertLambdaRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+      iam.ManagedPolicy.fromAwsManagedPolicyName(AWS_LAMBDA_BASIC_EXECUTION_ROLE)
     );
     // ✅ Allow MediaConvert full access
     mediaConvertLambdaRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSElementalMediaConvertFullAccess')
+      iam.ManagedPolicy.fromAwsManagedPolicyName(AWS_MEDIA_CONVERT_FULL_ACCESS)
     );
     // Grant lambda role read permissions to the unprocessed media bucket
     unprocessedMediaBucket.grantRead(mediaConvertLambdaRole);
@@ -108,7 +109,7 @@ export class MediaConverterStack extends cdk.Stack {
     // Allow lambda to pass role to mediaconvert job
     mediaConvertLambdaRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ['iam:PassRole'],
+        actions: [IAM_PASS_ROLE],
         resources: [mediaConvertRole.roleArn],
         effect: iam.Effect.ALLOW,
         conditions: {
@@ -119,7 +120,7 @@ export class MediaConverterStack extends cdk.Stack {
       })
     );
 
-    const ec2PublicIp = cdk.Fn.importValue('EC2PublicIP');
+    const ec2PublicIp = cdk.Fn.importValue(EC2_PUBLIC_IP);
     // use NodejsFunction for better performance
     const mediaConverterLambda = new NodejsFunction(this, mediaConverterLambdaName, {
       functionName: mediaConverterLambdaName,
@@ -150,14 +151,14 @@ export class MediaConverterStack extends cdk.Stack {
       s3.EventType.OBJECT_CREATED,
       new s3n.LambdaDestination(mediaConverterLambda),
       {
-        suffix: '.mp4', // Trigger only for MP4 uploads
+        suffix: EXT_MP4, // Trigger only for MP4 uploads
       }
     );
     processedMediaBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       new s3n.LambdaDestination(updateVideoStatusLambda),
       {
-        suffix: '.m3u8', // Trigger only for MP4 uploads
+        suffix: EXT_M3U8, // Trigger only for MP4 uploads
       }
     );
   }
