@@ -4,7 +4,7 @@ import { Construct } from 'constructs';
 import {
   BRANCH,
   CDK_REPO_ACTIONS,
-  EC2_INSTANCE_ID,
+  // EC2_INSTANCE_ID,
   GIT_ACTION_ROLE_NAME,
   GITHUB_OIDC_TOKEN_URL,
   LP_CDK_REPO,
@@ -26,7 +26,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
     const gitActionLpRoleName = `${id}-role-git-action-${props?.environment}-${props?.accountId}`;
     const gitActionCdkPipelineRoleName = `${id}-role-git-action-cdk-pipeline-${props?.environment}-${props?.accountId}`;
 
-    const ec2InstanceId = cdk.Fn.importValue(EC2_INSTANCE_ID);
+    // const ec2InstanceId = cdk.Fn.importValue(EC2_INSTANCE_ID);
 
     // 1. Create OIDC provider for GitHub
     const oidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOIDCProvider', {
