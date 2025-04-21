@@ -7,7 +7,7 @@ import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LpStackProps } from './interfaces';
-import { AWS_LAMBDA_BASIC_EXECUTION_ROLE, AWS_MEDIA_CONVERT_FULL_ACCESS, EC2_PUBLIC_IP, EC2_ROLE_NAME, EXT_M3U8, EXT_MP4, GIT_ACTION_ROLE_NAME, IAM_PASS_ROLE, US_EAST_1 } from './constants';
+import { AWS_LAMBDA_BASIC_EXECUTION_ROLE, AWS_MEDIA_CONVERT_FULL_ACCESS, EC2_PUBLIC_IP, EC2_ROLE_NAME, EXT_M3U8, EXT_MP4, GIT_ACTION_ROLE_NAME, IAM_PASS_ROLE, LAMBDA_SERVICE, MEDIA_CONVERT_SERVICE, REGIONS } from './constants';
 
 
 export class MediaConverterStack extends cdk.Stack {
@@ -77,7 +77,7 @@ export class MediaConverterStack extends cdk.Stack {
     
 
     const mediaConvertRole = new iam.Role(this, mediaConverterRoleName, {
-      assumedBy: new iam.ServicePrincipal('mediaconvert.amazonaws.com'),
+      assumedBy: new iam.ServicePrincipal(MEDIA_CONVERT_SERVICE),
       roleName: mediaConverterRoleName,
     });
 
@@ -85,12 +85,12 @@ export class MediaConverterStack extends cdk.Stack {
     processedMediaBucket.grantWrite(mediaConvertRole);
 
     // Use AWS SDK to get MediaConvert endpoint
-    const mediaConvertClient = new AWS.MediaConvert({ region: US_EAST_1 });
+    const mediaConvertClient = new AWS.MediaConvert({ region: REGIONS.usEast1 });
     const mediaConvertEndpoint = mediaConvertClient.endpoint.hostname; // Extract hostname as string
 
     // Lambda execution role with all necessary policies
     const mediaConvertLambdaRole = new iam.Role(this, lambdaMediaConverterRoleRoleName, {
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      assumedBy: new iam.ServicePrincipal(LAMBDA_SERVICE),
       roleName: lambdaMediaConverterRoleRoleName,
       description: 'Allows Lambda to access S3 and MediaConvert, and pass role to MediaConvert job',
     });
@@ -114,7 +114,7 @@ export class MediaConverterStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         conditions: {
           StringEquals: {
-            'iam:PassedToService': 'mediaconvert.amazonaws.com',
+            'iam:PassedToService': MEDIA_CONVERT_SERVICE,
           },
         },
       })

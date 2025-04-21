@@ -7,7 +7,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { LpStackProps } from './interfaces';
 import { readFileSync } from 'fs';
-import { EC2_INSTANCE_ID, EC2_PUBLIC_IP, EC2_ROLE_NAME, LP_EC2_ROLE_ACTIONS, AMAZON_SSM_MANAGED_INSTANCE_CORE, keyPairName, PARAM_STORE_DEV_ARN } from './constants';
+import { EC2_INSTANCE_ID, EC2_PUBLIC_IP, EC2_ROLE_NAME, LP_EC2_ROLE_ACTIONS, AMAZON_SSM_MANAGED_INSTANCE_CORE, keyPairName, PARAM_STORE_DEV_ARN, EC2_SERVICE } from './constants';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -61,7 +61,7 @@ export class VpcStack extends cdk.Stack {
       this,
       `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
       {
-        assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        assumedBy: new iam.ServicePrincipal(EC2_SERVICE),
         roleName: `${id}-role-ec2-${props?.environment}-${props?.accountId}`,
       }
     );
