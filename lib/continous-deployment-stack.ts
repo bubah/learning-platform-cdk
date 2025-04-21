@@ -38,7 +38,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
       assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': STS_SERVICE,
-          [`token.actions.githubusercontent.com:sub`]: `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
+          'token.actions.githubusercontent.com:sub': `repo:${lpServiceRepo}:ref:refs/heads/${branch}`,
         },
       }),
       roleName: gitActionLpRoleName,
@@ -48,7 +48,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
       assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': STS_SERVICE,
-          [`token.actions.githubusercontent.com:sub`]: `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
+          'token.actions.githubusercontent.com:sub': `repo:${lpCdkRepo}:ref:refs/heads/${branch}`,
         },
       }),
       roleName: gitActionCdkPipelineRoleName,
