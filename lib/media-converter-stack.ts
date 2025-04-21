@@ -111,7 +111,7 @@ export class MediaConverterStack extends cdk.Stack {
     );
     // ✅ Allow MediaConvert full access
     mediaConvertLambdaRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName(AWS_MEDIA_CONVERT_FULL_ACCESS)
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSElementalMediaConvertFullAccess')
     );
     // Grant lambda role read permissions to the unprocessed media bucket
     unprocessedMediaBucket.grantRead(mediaConvertLambdaRole);
