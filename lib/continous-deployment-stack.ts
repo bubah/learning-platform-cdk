@@ -13,6 +13,7 @@ import {
   STS_SERVICE,
   WILDCARD,
   SSM_GET_COMMAND_INVOC,
+  SSM_LIST_COMMAND_INVOC,
 } from './constants';
 import { LpStackProps } from './interfaces';
 
@@ -57,7 +58,7 @@ export class ContinousDeplymentStack extends cdk.Stack {
 
     lpSvcRepoGitActionRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: [SSM_SEND_COMMAND, SSM_GET_COMMAND_INVOC],
+        actions: [SSM_SEND_COMMAND, SSM_GET_COMMAND_INVOC, SSM_LIST_COMMAND_INVOC],
         resources: ['*'],
       })
     );
