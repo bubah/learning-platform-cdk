@@ -1,6 +1,7 @@
 export const WILDCARD = '*';
 export const SSM_SEND_COMMAND = 'ssm:SendCommand';
 export const SSM_GET_COMMAND_INVOC = 'ssm:GetCommandInvocation';
+export const SSM_LIST_COMMAND_INVOC = 'ssm:ListCommandInvocations';
 // 'iam:PassRole'
 export const IAM_PASS_ROLE = 'iam:PassRole';
 export const CDK_REPO_ACTIONS = [
