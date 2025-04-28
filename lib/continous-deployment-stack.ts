@@ -6,9 +6,11 @@ import {
   CDK_REPO_ACTIONS,
   // EC2_INSTANCE_ID,
   GIT_ACTION_ROLE_NAME,
+  GIT_ACTION_FRONTEND_ROLE_NAME,
   GITHUB_OIDC_TOKEN_URL,
   LP_CDK_REPO,
   LP_SERVICE_REPO,
+  LP_FRONTEND_REPO,
   SSM_SEND_COMMAND,
   STS_SERVICE,
   WILDCARD,
@@ -21,12 +23,14 @@ export class ContinousDeplymentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
     super(scope, id, props);
 
+    const lpFrontendRepo = LP_FRONTEND_REPO;
     const lpServiceRepo = LP_SERVICE_REPO;
     const lpCdkRepo = LP_CDK_REPO;
     const branch = BRANCH.master;
 
     const gitActionLpRoleName = `${id}-role-git-action-${props?.environment}-${props?.accountId}`;
     const gitActionCdkPipelineRoleName = `${id}-role-git-action-cdk-pipeline-${props?.environment}-${props?.accountId}`;
+    const gitActionFrontendLpRoleName = `${id}-frontend-role-git-action-${props?.environment}-${props?.accountId}`;
 
     // const ec2InstanceId = cdk.Fn.importValue(EC2_INSTANCE_ID);
 
@@ -34,6 +38,16 @@ export class ContinousDeplymentStack extends cdk.Stack {
     const oidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOIDCProvider', {
       url: GITHUB_OIDC_TOKEN_URL,
       clientIds: [STS_SERVICE],
+    });
+
+    const frontendGitActionRole = new iam.Role(this, gitActionFrontendLpRoleName, {
+      assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': STS_SERVICE,
+          'token.actions.githubusercontent.com:sub': `repo:${lpFrontendRepo}:ref:refs/heads/${branch}`,
+        },
+      }),
+      roleName: gitActionFrontendLpRoleName,
     });
 
     const lpSvcRepoGitActionRole = new iam.Role(this, gitActionLpRoleName, {
@@ -55,6 +69,16 @@ export class ContinousDeplymentStack extends cdk.Stack {
       }),
       roleName: gitActionCdkPipelineRoleName,
     });
+
+    frontendGitActionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['s3:PutObject', 's3:DeleteObject', 's3:ListBucket'],
+        resources: [
+          `arn:aws:s3:::learning-platform-dev-bhcr`,
+          `arn:aws:s3:::learning-platform-dev-bhcr/*`,
+        ],
+      })
+    );
 
     lpSvcRepoGitActionRole.addToPolicy(
       new iam.PolicyStatement({
@@ -83,6 +107,11 @@ export class ContinousDeplymentStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'GitActionRoleName', {
       value: gitActionLpRoleName,
       exportName: GIT_ACTION_ROLE_NAME, // Can be imported by other stacks
+    });
+
+    new cdk.CfnOutput(this, 'GitActionFrontendRoleName', {
+      value: frontendGitActionRole.roleArn,
+      exportName: GIT_ACTION_FRONTEND_ROLE_NAME,
     });
   }
 }
