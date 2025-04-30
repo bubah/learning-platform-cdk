@@ -18,6 +18,8 @@ import {
   SSM_LIST_COMMAND_INVOC,
 } from './constants';
 import { LpStackProps } from './interfaces';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import { RemovalPolicy } from 'aws-cdk-lib';
 
 export class ContinousDeplymentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LpStackProps) {
@@ -70,15 +72,28 @@ export class ContinousDeplymentStack extends cdk.Stack {
       roleName: gitActionCdkPipelineRoleName,
     });
 
-    frontendGitActionRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: ['s3:PutObject', 's3:DeleteObject', 's3:ListBucket'],
-        resources: [
-          `arn:aws:s3:::learning-platform-dev-bhcr`,
-          `arn:aws:s3:::learning-platform-dev-bhcr/*`,
-        ],
-      })
-    );
+    // Front end s3 bucket name for deployment artifacts
+    const frontendBucketName = `${id}-frontend-repo-${props?.environment}-${props?.accountId}`;
+
+    // Create a publicly accessible S3 static website bucket
+    const frontendAppBucket = new s3.Bucket(this, frontendBucketName, {
+      bucketName: frontendBucketName,
+      websiteIndexDocument: 'index.html',
+      websiteErrorDocument: 'index.html', // useful for React SPAs with client-side routing
+      publicReadAccess: true,
+      removalPolicy: RemovalPolicy.DESTROY, // **CHANGE TO RETAIN FOR PRODUCTION**
+      autoDeleteObjects: true,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: false,
+        ignorePublicAcls: false,
+        blockPublicPolicy: false,
+        restrictPublicBuckets: false,
+      }),
+    });
+
+    frontendAppBucket.grantPut(frontendGitActionRole);
+    frontendAppBucket.grantDelete(frontendGitActionRole);
+    frontendAppBucket.grantRead(frontendGitActionRole);
 
     lpSvcRepoGitActionRole.addToPolicy(
       new iam.PolicyStatement({
