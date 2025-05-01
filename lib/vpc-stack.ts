@@ -91,7 +91,9 @@ export class VpcStack extends cdk.Stack {
       {
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
         keyPair,
-        machineImage: ec2.MachineImage.latestAmazonLinux2(),
+        machineImage: ec2.MachineImage.genericLinux({
+          'us-east-1': 'ami-0b86aaed8ef90e45f', // Use your region and AMI ID
+        }),
         securityGroup: ec2SecurityGroup,
         vpc: this.vpc,
         associatePublicIpAddress: true, // Ensure the instance has a public IP
