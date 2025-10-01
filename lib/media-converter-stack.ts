@@ -91,7 +91,22 @@ export class MediaConverterStack extends cdk.Stack {
     });
 
     unprocessedMediaBucket.grantRead(mediaConvertRole);
+    unprocessedMediaBucket.grantReadWrite(ec2Role);
     processedMediaBucket.grantWrite(mediaConvertRole);
+
+    ec2Role.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          's3:CreateMultipartUpload',
+          's3:ListMultipartUploadParts',
+          's3:CompleteMultipartUpload',
+          's3:AbortMultipartUpload',
+          's3:ListBucketMultipartUploads',
+        ],
+        resources: [unprocessedMediaBucket.bucketArn, `${unprocessedMediaBucket.bucketArn}/*`],
+      })
+    );
 
     // Use AWS SDK to get MediaConvert endpoint
     const mediaConvertClient = new AWS.MediaConvert({ region: REGIONS.usEast1 });
