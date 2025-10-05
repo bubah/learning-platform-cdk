@@ -13,11 +13,12 @@ exports.handler = async (event: S3Event) => {
   // ✅ Replace with your EC2 instance's public IP or DNS
   const apiHost = process.env.LEARNING_PLATFORM_BASE_URL;
   //   const apiHost = "ec2-75-101-224-166.compute-1.amazonaws.com";
-  const apiPath = `/sections/${sectionId}`; // Your endpoint
+  const apiPath = `/content/sections/${sectionId}`; // Your endpoint
   const useHttps = false; // true if using HTTPS
 
   const postData = JSON.stringify({
-    content: inputKey,
+    s3Key: inputKey,
+    uploadStatus: 'READY',
   });
 
   const reqOptions = {
